@@ -1,0 +1,28 @@
+{% extends "index.html" %}
+
+{% block content %}
+
+<div class="container mt-3">
+    <form method="POST" action="{{ url_for('login') }}">
+        {{ form.csrf_token }}
+        <div class="mb-3">
+            {{ form.email.label(class="form-label") }}
+            {% if form.errors.email %}
+                {{ form.email(size=20, class="form-control is-invalid") }}
+            {% else %}
+                {{ form.email(size=20, class="form-control") }}
+            {% endif %}
+             <div class="invalid-feedback">{{ form.errors.email|join(' ') }}</div>
+        </div>
+        <div class="mb-3">
+            {{ form.password.label(class="form-label") }}
+            {{ form.password(size=20, class="form-control") }}
+        </div>
+        <div class="mb-3">
+            {{ form.submit(class="btn btn-primary", value="Sign in") }}
+        </div>
+    </form>
+</div>
+
+
+{% endblock %}
