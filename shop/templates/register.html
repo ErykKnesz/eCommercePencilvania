@@ -6,6 +6,10 @@
     <form method="POST" action="{{ url_for('register') }}">
         {{ form.csrf_token }}
         <div class="mb-3">
+            {{ form.name.label(class="form-label") }}
+            {{ form.name(size=20, class="form-control") }}
+        </div>
+        <div class="mb-3">
             {{ form.email.label(class="form-label") }}
             {% if form.errors.email %}
                 {{ form.email(size=20, class="form-control is-invalid") }}

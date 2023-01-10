@@ -21,6 +21,12 @@ class Order(db.Model):
     paid = db.Column(db.Boolean)
 
 
+class Cart(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    customer_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+    products = db.Column(db.Text, nullable=False)
+
+
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100))

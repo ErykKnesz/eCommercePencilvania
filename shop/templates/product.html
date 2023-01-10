@@ -1,75 +1,35 @@
-{% include "header.html" %}
-{% import "bootstrap/wtf.html" as wtf %}
+{% extends "index.html" %}
+
+{% block content %}
 
   <!-- Page Header -->
-  <header class="masthead" style="background-image: url('{{post.img_url}}')">
-    <div class="overlay"></div>
+<div class="overlay"></div>
     <div class="container">
       <div class="row">
-        <div class="col-lg-8 col-md-10 mx-auto">
-          <div class="post-heading">
-            <h1>{{post.title}}</h1>
-            <h2 class="subheading">{{post.subtitle}}</h2>
-            <span class="meta">Posted by
-              <a href="#">{{ post.user.name }}</a>
-              on {{ post.date }}</span>
+          <div class="col">
+              <img src="{{ url_for('static', filename=product.filename) }}" class="card-img-top">
+          </div>
+          <div class="col">
+          <h1>{{product.name}}</h1>
+          <p>{{product.description}}</p>
+          <p>{{ "PLN {:.2f}".format(product.price) }}</p>
+            <a onclick="incrementCart()" href="#" class="btn btn-primary">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-cart" viewBox="0 0 16 16">
+                    <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5zM3.102 4l1.313 7h8.17l1.313-7H3.102zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-7 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                </svg> Add to Cart
+                <script>
+
+                  function incrementCart() {
+                  var xhttp = new XMLHttpRequest();
+                  xhttp.open("GET", "{{ url_for('add_to_cart', product_id=product.id) }}");
+                  xhttp.send();
+                }
+                </script>
+            </a>
           </div>
         </div>
       </div>
     </div>
-  </header>
-
-  <!-- Post Content -->
-{% with messages = get_flashed_messages() %}
-  {% if messages %}
-    <ul class=flashes>
-    {% for message in messages %}
-      <li>{{ message }}</li>
-    {% endfor %}
-    </ul>
-  {% endif %}
-{% endwith %}
-
-  <article>
-    <div class="container">
-      <div class="row">
-        <div class="col-lg-8 col-md-10 mx-auto">
-            {{ post.body|safe }}
-          <hr>
-            {% if current_user.id == 1 %}
-              <div class="clearfix">
-              <a class="btn btn-primary float-right" href="{{url_for('edit_post', post_id=post.id)}}">Edit Post</a>
-              </div>
-            {% endif %}
 
 
-<!--           Comments Area -->
-          {% if current_user %}
-              {{ ckeditor.load() }}
-              {{ ckeditor.config(name='body') }}
-              {{ wtf.quick_form(form, novalidate=True, button_map={"submit": "primary"}) }}
-          {% endif %}
-          <div class="col-lg-8 col-md-10 mx-auto comment">
-              <ul class="commentList">
-                {% for comment in post.comments %}
-                <li>
-                    <div class="commenterImage">
-                      <img src="{{ comment.user.email | gravatar }}"/>
-                    </div>
-                    <div class="commentText">
-                      <p>{{ comment.text | safe }}</p>
-                      <span class="date sub-text">{{ comment.user.name }}</span>
-                    </div>
-                </li>
-                {% endfor %}
-              </ul>
-            </div>
-
-
-          </div>
-      </div>
-    </div>
-  </article>
-
-  <hr>
-{% include "footer.html" %}
+{% endblock %}

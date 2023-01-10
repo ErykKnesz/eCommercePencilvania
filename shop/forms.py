@@ -1,12 +1,13 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, PasswordField, HiddenField
-from wtforms.validators import DataRequired, Email
+from wtforms import StringField, SubmitField, PasswordField, HiddenField, IntegerField
+from wtforms.validators import DataRequired, Email, Optional
 
 
 ##WTForm
 class CartForm(FlaskForm):
-    title = StringField("Blog Post Title", validators=[DataRequired()])
-    subtitle = StringField("Subtitle", validators=[DataRequired()])
+    product_id = StringField("Blog Post Title", validators=[DataRequired()])
+    product_name = StringField("Subtitle", validators=[Optional()])
+    quantity = IntegerField("Quantity", validators=[DataRequired()])
     submit = SubmitField("Submit Post")
 
 

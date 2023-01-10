@@ -1,16 +1,15 @@
 from functools import wraps
-import os
 
 from flask import (render_template, redirect, url_for, flash, request,
                    abort, session)
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import login_user, LoginManager, login_required, current_user, logout_user
-from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.exc import IntegrityError
 
 from shop import app, db
-from shop.models import User, Product, Order
-from shop.forms import UserForm, LoginForm
+from shop.models import User, Product
+from shop.forms import UserForm, LoginForm, CartForm
+from cart_serializer import cart_to_dict
 
 
 login_manager = LoginManager()
@@ -52,7 +51,7 @@ def register():
         except IntegrityError:
             flash('This email address is already used')
             return redirect(url_for('login'))
-        return redirect(url_for("get_all_posts"))
+        return redirect(url_for("get_products"))
     return render_template("register.html", form=form)
 
 
@@ -69,8 +68,7 @@ def login():
                     session['logged_in'] = True
                     session.permanent = True  # Use cookie to store session.
                     flash('You are now logged in.', 'success')
-                    return redirect(next_url or url_for('homepage'))
-                    return redirect(url_for('get_all_posts'))
+                    return redirect(next_url or url_for('get_products'))
                 flash('Wrong password.')
                 return redirect(url_for('login'))
             flash('Email address not found.')
@@ -78,50 +76,48 @@ def login():
     return render_template("login.html", form=form)
 
 
-# @app.route("/login", methods=['GET', 'POST'])
-# def login():
-#     form = LoginForm()
-#     next_url = request.args.get('next')
-#     if request.method == 'POST':
-#         if form.validate_on_submit():
-#             session['logged_in'] = True
-#             session.permanent = True  # Use cookie to store session.
-#             flash('You are now logged in.', 'success')
-#             return redirect(next_url or url_for('homepage'))
-#     return render_template("login_form.html", form=form)
-
-
 @app.route("/logout")
 @login_required
 def logout():
     logout_user()
-    return redirect(url_for('get_all_posts'))
+    return redirect(url_for('get_products'))
 
 
 @app.route('/')
 def get_products():
     products = Product.query.all()
-    return render_template("shop.html", products=products)
+    form = CartForm()
+    return render_template("shop.html", products=products, form=form)
 
 
-@app.route('/cart/add/<int:product_id>')
-def add_to_cart(product_id):
-    product = db.session.query(Product).get_by(id=product_id)  # to sth
-    products = Product.query.all()
-    return render_template("shop.html", products=products)
+@app.route('/cart/add/', methods=["POST"])
+def add_to_cart():
+    form = CartForm()
+    if form.validate_on_submit():
+        product_id = form.data["product_id"]
+        product = db.session.query(Product).get(product_id)
+        if session.get("cart") is None:
+            session["cart"] = ""
+        qty = form.data["quantity"]
+        cart_contents = '''{
+            "product_id": %d,
+            "quantity": %d 
+        }''' % (product.id, qty)
+        print(cart_contents)
+        session["cart"] += cart_contents + ";"
+        cart_to_dict(session.get("cart"))
+    return redirect(url_for("get_products"))
 
 
-@app.route("/product/<int:post_id>", methods=["GET", "POST"])
+@app.route('/cart')
+def get_cart():
+    return render_template("cart.html")
+
+
+@app.route("/product/<int:product_id>")
 def show_product(product_id):
     product = Product.query.get(product_id)
     cart_form = ""
-    if request.method == "POST" and cart_form.validate_on_submit():
-        if current_user.is_authenticated:
-
-            db.session.commit()
-        else:
-            flash("Sorry, you need to log in first!")
-            return redirect(url_for('login'))
     return render_template("product.html", product=product)
 
 
@@ -133,7 +129,7 @@ def add_new_product():
         new_post = Product()  # to do
         db.session.add(new_post)
         db.session.commit()
-        return redirect(url_for("get_all_posts"))
+        return redirect(url_for("get_products"))
     return render_template("make-product.html", form=form)
 
 
@@ -143,7 +139,7 @@ def delete_product(product_id):
     product_to_delete = "BlogPost.query.get(post_id)"
     db.session.delete(product_to_delete)
     db.session.commit()
-    return redirect(url_for('get_all_posts'))
+    return redirect(url_for('get_products'))
 
 
 @app.route("/about")
