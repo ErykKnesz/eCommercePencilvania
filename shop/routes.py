@@ -9,7 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from shop import app, db
 from shop.models import User, Product
 from shop.forms import UserForm, LoginForm, CartForm
-from cart_serializer import cart_to_dict
+from cart_serializer import update_cart_quantity, get_cart_dict
 
 
 login_manager = LoginManager()
@@ -101,30 +101,63 @@ def add_to_cart():
         qty = form.data["quantity"]
         cart_contents = '''{
             "product_id": %d,
+            "name": "%s",
+            "price": %f,
             "quantity": %d 
-        }''' % (product.id, qty)
-        print(cart_contents)
-        session["cart"] += cart_contents + ";"
-        cart_to_dict(session.get("cart"))
+        }''' % (product.id, product.name, product.price, qty)
+        session["cart"] += cart_contents + ";"  # string to save in session's cart
+        print(session['cart'])
+        session["cart"] = update_cart_quantity(session.get("cart"), increment=True)[1]
+        print(session['cart'])
     return redirect(url_for("get_products"))
 
 
-@app.route('/cart')
+@app.route("/cart/update/", methods=["POST"])
+def update_cart():
+    form = CartForm()
+    if form.validate_on_submit():
+        product_id = form.data["product_id"]
+        product = db.session.query(Product).get(product_id)
+        if session.get("cart") is None:
+            session["cart"] = ""
+        qty = form.data["quantity"]
+        print(request.form)
+        cart_contents = '''{
+            "product_id": %d,
+            "name": "%s",
+            "price": %f,
+            "quantity": %d 
+        }''' % (product.id, product.name, product.price, qty)
+        session["cart"] += cart_contents + ";"
+        print(f'before {session["cart"]}')
+        session["cart"] = update_cart_quantity(session.get("cart"), increment=False)[1]
+        print(f'after {session["cart"]}')
+    return redirect(url_for("get_products"))
+
+
+@app.route("/cart")
 def get_cart():
-    return render_template("cart.html")
+    form = CartForm()
+    cart = session.get("cart")
+    print(cart)
+    if cart is not None:
+        cart = get_cart_dict(cart)
+    else:
+        cart = {}
+    return render_template("cart.html", form=form, cart=cart)
 
 
 @app.route("/product/<int:product_id>")
-def show_product(product_id):
+def get_product(product_id):
     product = Product.query.get(product_id)
-    cart_form = ""
-    return render_template("product.html", product=product)
+    form = CartForm()
+    return render_template("product.html", product=product, form=form)
 
 
 @app.route("/new-post", methods=["GET", "POST"])
 @admin_only
 def add_new_product():
-    form = "CreatePostForm()"
+    form = "CreatePostForm()" # to do
     if form.validate_on_submit():
         new_post = Product()  # to do
         db.session.add(new_post)
