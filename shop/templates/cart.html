@@ -19,9 +19,14 @@
                         {{ form.product_id(value=cart[product].product_id, type="hidden") }}
                         <td>{{ cart[product].name }}</td>
                         <td>{{ form.quantity(value=cart[product].quantity) }}</td>
-                        <td>{{ "{:.2f}".format(cart[product].quantity * cart[product].price) }}</td>
+                        <td>{{ "{:.2f}".format(cart[product].line_total) }}</td>
                     </tr>
                 {% endfor %}
+            <tr>
+                <td>Total:</td>
+                <td></td>
+                <td>{{ "{:.2f}".format(total) }}</td>
+            </tr>
             </tbody>
         </table>
         {{ form.submit(class="btn btn-primary") }}

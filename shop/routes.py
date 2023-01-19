@@ -106,9 +106,7 @@ def add_to_cart():
             "quantity": %d 
         }''' % (product.id, product.name, product.price, qty)
         session["cart"] += cart_contents + ";"  # string to save in session's cart
-        print(session['cart'])
         session["cart"] = update_cart_quantity(session.get("cart"), increment=True)[1]
-        print(session['cart'])
     return redirect(url_for("get_products"))
 
 
@@ -119,8 +117,8 @@ def update_cart():
         if session.get("cart") is None:
             session["cart"] = ""
         ids = request.form.getlist("product_id")
-        qtys = request.form.getlist("quantity")
-        for product_id, qty in zip(ids, qtys):
+        quantities = request.form.getlist("quantity")
+        for product_id, qty in zip(ids, quantities):
             product = db.session.query(Product).get(product_id)
             cart_contents = '''{
                 "product_id": %d,
@@ -129,9 +127,7 @@ def update_cart():
                 "quantity": %d 
             }''' % (product.id, product.name, product.price, int(qty))
             session["cart"] += cart_contents + ";"
-        print(f'before {session["cart"]}')
         session["cart"] = update_cart_quantity(session.get("cart"), increment=False)[1]
-        print(f'after {session["cart"]}')
     return redirect(url_for("get_products"))
 
 
@@ -139,12 +135,18 @@ def update_cart():
 def get_cart():
     form = CartForm()
     cart = session.get("cart")
+    total = 0
     print(cart)
     if cart is not None:
         cart = get_cart_dict(cart)
+        for product in cart:
+            line_total = cart[product]["quantity"] * cart[product]["price"]
+            cart[product]["line_total"] = line_total
+            total += line_total
     else:
         cart = {}
-    return render_template("cart.html", form=form, cart=cart)
+    return render_template("cart.html", form=form, cart=cart,
+                           total=total)
 
 
 @app.route("/product/<int:product_id>")
