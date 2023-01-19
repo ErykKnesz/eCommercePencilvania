@@ -116,19 +116,19 @@ def add_to_cart():
 def update_cart():
     form = CartForm()
     if form.validate_on_submit():
-        product_id = form.data["product_id"]
-        product = db.session.query(Product).get(product_id)
         if session.get("cart") is None:
             session["cart"] = ""
-        qty = form.data["quantity"]
-        print(request.form)
-        cart_contents = '''{
-            "product_id": %d,
-            "name": "%s",
-            "price": %f,
-            "quantity": %d 
-        }''' % (product.id, product.name, product.price, qty)
-        session["cart"] += cart_contents + ";"
+        ids = request.form.getlist("product_id")
+        qtys = request.form.getlist("quantity")
+        for product_id, qty in zip(ids, qtys):
+            product = db.session.query(Product).get(product_id)
+            cart_contents = '''{
+                "product_id": %d,
+                "name": "%s",
+                "price": %f,
+                "quantity": %d 
+            }''' % (product.id, product.name, product.price, int(qty))
+            session["cart"] += cart_contents + ";"
         print(f'before {session["cart"]}')
         session["cart"] = update_cart_quantity(session.get("cart"), increment=False)[1]
         print(f'after {session["cart"]}')
