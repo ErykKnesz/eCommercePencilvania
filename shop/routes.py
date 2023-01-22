@@ -127,8 +127,17 @@ def update_cart():
                 "quantity": %d 
             }''' % (product.id, product.name, product.price, int(qty))
             session["cart"] += cart_contents + ";"
-        session["cart"] = update_cart_quantity(session.get("cart"), increment=False)[1]
+        session["cart"] = update_cart_quantity(session.get("cart"))[1]
     return redirect(url_for("get_products"))
+
+
+@app.route("/cart/remove/<int:product_id>")
+def remove_from_cart(product_id):
+    product = db.session.query(Product).get(product_id)
+    flash(f"Removed {product.name} from cart", "success")
+    session["cart"] = update_cart_quantity(session.get("cart"),
+                                           remove_id=product.id)[1]
+    return redirect(url_for("get_cart"))
 
 
 @app.route("/cart")
@@ -136,7 +145,6 @@ def get_cart():
     form = CartForm()
     cart = session.get("cart")
     total = 0
-    print(cart)
     if cart is not None:
         cart = get_cart_dict(cart)
         for product in cart:
@@ -180,11 +188,6 @@ def delete_product(product_id):
 @app.route("/about")
 def about():
     return render_template("about.html")
-
-
-@app.route("/contact")
-def contact():
-    return render_template("contact.html")
 
 
 if __name__ == "__main__":

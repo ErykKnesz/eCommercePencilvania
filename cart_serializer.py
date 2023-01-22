@@ -10,10 +10,13 @@ def cart_to_dict(cart: str):
         yield item_as_dict
 
 
-def update_cart_quantity(cart: str, increment: bool) -> tuple:
+def update_cart_quantity(cart: str, increment: bool = False,
+                         remove_id: int = 0) -> tuple:
     cart_dict = {}
     for item_as_dict in cart_to_dict(cart):
-        if item_as_dict['product_id'] in cart_dict:
+        if item_as_dict['product_id'] == remove_id:
+            pass
+        elif item_as_dict['product_id'] in cart_dict:
             if increment:
                 cart_dict[item_as_dict['product_id']]['quantity'] += item_as_dict['quantity']
             else:
@@ -26,7 +29,7 @@ def update_cart_quantity(cart: str, increment: bool) -> tuple:
                 "price": %f,
                 "quantity": %d 
             };''' % (v["product_id"], v["name"], v["price"], v["quantity"])
-                        for v in cart_dict.values())
+                     for v in cart_dict.values())
 
     return cart_dict, cart_str
 

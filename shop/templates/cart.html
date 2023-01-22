@@ -11,6 +11,7 @@
                   <th scope="col">Item</th>
                   <th scope="col">Quantity</th>
                   <th scope="col">Price PLN</th>
+                  <th scope="col">Remove</th>
                 </tr>
             </thead>
             <tbody>
@@ -20,6 +21,7 @@
                         <td>{{ cart[product].name }}</td>
                         <td>{{ form.quantity(value=cart[product].quantity) }}</td>
                         <td>{{ "{:.2f}".format(cart[product].line_total) }}</td>
+                        <td><a href="{{ url_for('remove_from_cart', product_id=cart[product].product_id) }}" class="btn btn-danger"><i class="bi bi-trash"></i></a></td>
                     </tr>
                 {% endfor %}
             <tr>
