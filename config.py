@@ -12,6 +12,7 @@ class Config:
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     PERMANENT_SESSION_LIFETIME = 86400  # 1 day
+    UPLOADED_PHOTOS_DEST = "shop/static"
 
 
 config = Config()

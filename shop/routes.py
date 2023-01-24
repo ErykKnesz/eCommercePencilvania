@@ -3,15 +3,18 @@ from functools import wraps
 from flask import (render_template, redirect, url_for, flash, request,
                    abort, session)
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_uploads import configure_uploads
 from flask_login import login_user, LoginManager, login_required, current_user, logout_user
 from sqlalchemy.exc import IntegrityError
 
 from shop import app, db
 from shop.models import User, Product
-from shop.forms import UserForm, LoginForm, CartForm
+from shop.forms import UserForm, LoginForm, CartForm, ProductForm, images
 from cart_serializer import update_cart_quantity, get_cart_dict
+from image_handler import save_img
 
 
+configure_uploads(app, images)
 login_manager = LoginManager()
 login_manager.init_app(app)
 
@@ -33,12 +36,12 @@ def load_user(user_id):
     return user
 
 
-@app.route('/register', methods=["GET", "POST"])
+@app.route("/register", methods=["GET", "POST"])
 def register():
     form = UserForm()
     if request.method == "POST" and form.validate_on_submit():
         pass_hash = generate_password_hash(form.data["password"],
-                                           method='pbkdf2:sha256',
+                                           method="pbkdf2:sha256",
                                            salt_length=8)
         try:
             user = User(
@@ -49,30 +52,30 @@ def register():
             db.session.add(user)
             db.session.commit()
         except IntegrityError:
-            flash('This email address is already used')
-            return redirect(url_for('login'))
+            flash("This email address is already used", "danger")
+            return redirect(url_for("login"))
         return redirect(url_for("get_products"))
     return render_template("register.html", form=form)
 
 
-@app.route('/login',  methods=["GET", "POST"])
+@app.route("/login",  methods=["GET", "POST"])
 def login():
     form = LoginForm()
-    next_url = request.args.get('next')
+    next_url = request.args.get("next")
     if request.method == "POST":
         if form.validate_on_submit():
-            user = User.query.filter_by(email=form.data['email']).first()
+            user = User.query.filter_by(email=form.data["email"]).first()
             if user:
                 if check_password_hash(user.password, form.data["password"]):
                     login_user(user)
-                    session['logged_in'] = True
+                    session["logged_in"] = True
                     session.permanent = True  # Use cookie to store session.
-                    flash('You are now logged in.', 'success')
-                    return redirect(next_url or url_for('get_products'))
-                flash('Wrong password.')
-                return redirect(url_for('login'))
-            flash('Email address not found.')
-            return redirect(url_for('login'))
+                    flash("You are now logged in.", "success")
+                    return redirect(next_url or url_for("get_products"))
+                flash("Wrong password.", "danger")
+                return redirect(url_for("login"))
+            flash("Email address not found.", "danger")
+            return redirect(url_for("login"))
     return render_template("login.html", form=form)
 
 
@@ -80,17 +83,17 @@ def login():
 @login_required
 def logout():
     logout_user()
-    return redirect(url_for('get_products'))
+    return redirect(url_for("get_products"))
 
 
-@app.route('/')
+@app.route("/")
 def get_products():
     products = Product.query.all()
     form = CartForm()
     return render_template("shop.html", products=products, form=form)
 
 
-@app.route('/cart/add/', methods=["POST"])
+@app.route("/cart/add/", methods=["POST"])
 def add_to_cart():
     form = CartForm()
     if form.validate_on_submit():
@@ -164,25 +167,58 @@ def get_product(product_id):
     return render_template("product.html", product=product, form=form)
 
 
-@app.route("/new-post", methods=["GET", "POST"])
+@app.route("/admin")
 @admin_only
-def add_new_product():
-    form = "CreatePostForm()" # to do
-    if form.validate_on_submit():
-        new_post = Product()  # to do
-        db.session.add(new_post)
-        db.session.commit()
-        return redirect(url_for("get_products"))
-    return render_template("make-product.html", form=form)
+def admin_page():
+    products = Product.query.all()
+    return render_template("admin.html", products=products)
 
 
-@app.route("/delete/<int:product_id>")
+@app.route("/admin/product/add", methods=["GET", "POST"])
+@admin_only
+def add_product():
+    form = ProductForm()
+    if request.method == "POST":
+        if form.validate_on_submit():
+            filename = save_img(app.config["UPLOADED_PHOTOS_DEST"], form)
+            product = Product(
+                name=form.data["name"],
+                description=form.data["description"],
+                filename=filename,
+                price=form.data["price"]
+            )
+            db.session.add(product)
+            db.session.commit()
+            return redirect(url_for("admin_page"))
+    return render_template("new-product.html", form=form)
+
+
+@app.route("/admin/product/edit/<int:product_id>", methods=["GET", "POST"])
+@admin_only
+def edit_product(product_id):
+    product = Product.query.get(product_id)
+    form = ProductForm(obj=product)
+    if request.method == "POST":
+        if form.validate_on_submit():
+            filename = save_img(app.config["UPLOADED_PHOTOS_DEST"], form)
+            product.name = form.data["name"]
+            product.description = form.data["description"]
+            product.filename = filename
+            product.price = form.data["price"]
+            db.session.add(product)
+            db.session.commit()
+            flash("Successfully edited product information", "success")
+            return redirect(url_for("admin_page"))
+    return render_template("edit-product.html", form=form, product_id=product_id)
+
+
+@app.route("/admin/product/delete/<int:product_id>")
 @admin_only
 def delete_product(product_id):
-    product_to_delete = "BlogPost.query.get(post_id)"
-    db.session.delete(product_to_delete)
+    product = Product.query.get(product_id)
+    db.session.delete(product)
     db.session.commit()
-    return redirect(url_for('get_products'))
+    return redirect(url_for("admin_page"))
 
 
 @app.route("/about")

@@ -6,7 +6,7 @@
     <div class="container text-center">
         <h2>Add New Product</h2>
     </div>
-    <form method="POST" action="{{ url_for('add_product') }}" enctype="multipart/form-data">
+    <form method="POST" action="{{ url_for('edit_product', product_id=product_id) }}" enctype="multipart/form-data">
         {{ form.csrf_token }}
         <div class="mb-3">
             {{ form.name.label(class="form-label") }}
