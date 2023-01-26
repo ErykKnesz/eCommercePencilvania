@@ -271,7 +271,6 @@ def my_account():
 @app.route("/my-account/address/add", methods=["POST"])
 @login_required
 def add_address():
-    user = User.query.get(current_user.id)
     form = AddressForm()
     address = Address(
         user_id=current_user.id,
@@ -283,9 +282,22 @@ def add_address():
         postcode=form.data['postcode']
     )
     db.session.add(address)
-    #user.addresses.append(address)
     db.session.commit()
     return redirect(url_for("my_account"))
+
+
+@app.route("/my-account/edit/<int:address_id>", methods=["GET", "POST"])
+@login_required
+def edit_address(address_id):
+    address = Address.query.get(address_id)
+    form = AddressForm(obj=address)
+    if request.method == "POST":
+        if form.validate_on_submit():
+            form.populate_obj(address)
+            db.session.commit()
+            flash("Successfully edited address information", "success")
+            return redirect(url_for("my_account"))
+    return render_template("edit-address.html", form=form, address=address)
 
 
 @app.route("/my-account/address/delete/<int:address_id>")
