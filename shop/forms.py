@@ -50,6 +50,8 @@ class ProductForm(FlaskForm):
 
 
 class AddressForm(FlaskForm):
+    line_1 = TextAreaField("Line 1", validators=[Optional()])
+    line_2 = TextAreaField("Line 2", validators=[Optional()])
     street = TextAreaField("Street", validators=[DataRequired()])
     city = StringField("City", validators=[DataRequired()])
     postcode = StringField("Postcode", validators=[DataRequired()])

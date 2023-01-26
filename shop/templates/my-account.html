@@ -4,6 +4,8 @@
 <div class="container">
     <h2>Addresses</h2>
     {% for address in addresses %}
+        <p>{{ address.line_1 or "" }}</p>
+        <p>{{ address.line_2 or "" }}</p>
         <p>{{ address.street }}</p>
         <p>{{ address.postcode }} {{ address.city }}</p>
         <p>{{ address.country }}</p>
@@ -12,6 +14,24 @@
     <h3>New Address</h3>
         <form method="POST" action="{{ url_for('add_address') }}">
         {{ form.csrf_token }}
+        <div class="mb-3">
+            {{ form.line_1.label(class="form-label") }}
+            {% if form.errors.line_1 %}
+                {{ form.line_1(size=20, class="form-control is-invalid") }}
+            {% else %}
+                {{ form.line_1(size=20, class="form-control") }}
+            {% endif %}
+             <div class="invalid-feedback">{{ form.errors.line_1|join(' ') }}</div>
+        </div>
+        <div class="mb-3">
+            {{ form.line_2.label(class="form-label") }}
+            {% if form.errors.line_2 %}
+                {{ form.line_2(size=20, class="form-control is-invalid") }}
+            {% else %}
+                {{ form.line_2(size=20, class="form-control") }}
+            {% endif %}
+             <div class="invalid-feedback">{{ form.errors.line_2|join(' ') }}</div>
+        </div>
         <div class="mb-3">
             {{ form.street.label(class="form-label") }}
             {% if form.errors.street %}

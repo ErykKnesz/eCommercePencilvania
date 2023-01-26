@@ -17,6 +17,8 @@ class User(UserMixin, db.Model):
 class Address(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    line_1 = db.Column(db.String(100))
+    line_2 = db.Column(db.String(100))
     country = db.Column(db.String(100), nullable=False)
     city = db.Column(db.String(100), nullable=False)
     street = db.Column(db.String(100), nullable=False)

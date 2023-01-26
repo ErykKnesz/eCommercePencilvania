@@ -275,6 +275,8 @@ def add_address():
     form = AddressForm()
     address = Address(
         user_id=current_user.id,
+        line_1=form.data['line_1'],
+        line_2=form.data['line_2'],
         country=form.data['country'],
         city=form.data['city'],
         street=form.data['street'],
