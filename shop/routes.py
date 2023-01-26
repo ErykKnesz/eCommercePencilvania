@@ -1,15 +1,17 @@
+import functools
 from functools import wraps
 
 from flask import (render_template, redirect, url_for, flash, request,
                    abort, session)
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_uploads import configure_uploads
-from flask_login import login_user, LoginManager, login_required, current_user, logout_user
+from flask_login import login_user, LoginManager, current_user, logout_user
 from sqlalchemy.exc import IntegrityError
 
 from shop import app, db
-from shop.models import User, Product
-from shop.forms import UserForm, LoginForm, CartForm, ProductForm, images
+from shop.models import User, Product, Address, Order, OrderItem
+from shop.forms import (UserForm, LoginForm, CartForm, ProductForm,
+                        images, AddressForm)
 from cart_serializer import update_cart_quantity, get_cart_dict
 from image_handler import save_img
 
@@ -17,6 +19,15 @@ from image_handler import save_img
 configure_uploads(app, images)
 login_manager = LoginManager()
 login_manager.init_app(app)
+
+
+def login_required(view_func):
+    @functools.wraps(view_func)
+    def check_permissions(*args, **kwargs):
+        if current_user.is_authenticated:
+            return view_func(*args, **kwargs)
+        return redirect(url_for('login', next=request.path))
+    return check_permissions
 
 
 def admin_only(func):
@@ -58,7 +69,7 @@ def register():
     return render_template("register.html", form=form)
 
 
-@app.route("/login",  methods=["GET", "POST"])
+@app.route("/login", methods=["GET", "POST"])
 def login():
     form = LoginForm()
     next_url = request.args.get("next")
@@ -86,6 +97,11 @@ def logout():
     return redirect(url_for("get_products"))
 
 
+@app.route("/about")
+def about():
+    return render_template("about.html")
+
+
 @app.route("/")
 def get_products():
     products = Product.query.all()
@@ -110,6 +126,7 @@ def add_to_cart():
         }''' % (product.id, product.name, product.price, qty)
         session["cart"] += cart_contents + ";"  # string to save in session's cart
         session["cart"] = update_cart_quantity(session.get("cart"), increment=True)[1]
+        flash("New item was added to your cart!", "success")
     return redirect(url_for("get_products"))
 
 
@@ -131,15 +148,16 @@ def update_cart():
             }''' % (product.id, product.name, product.price, int(qty))
             session["cart"] += cart_contents + ";"
         session["cart"] = update_cart_quantity(session.get("cart"))[1]
-    return redirect(url_for("get_products"))
+        flash("Updated the cart successfully!", "success")
+    return redirect(url_for("get_cart"))
 
 
 @app.route("/cart/remove/<int:product_id>")
 def remove_from_cart(product_id):
     product = db.session.query(Product).get(product_id)
+    session["cart"] = update_cart_quantity(session.get("cart", ""),
+                                           remove_id=product_id)[1]
     flash(f"Removed {product.name} from cart", "success")
-    session["cart"] = update_cart_quantity(session.get("cart"),
-                                           remove_id=product.id)[1]
     return redirect(url_for("get_cart"))
 
 
@@ -221,9 +239,30 @@ def delete_product(product_id):
     return redirect(url_for("admin_page"))
 
 
-@app.route("/about")
-def about():
-    return render_template("about.html")
+@app.route("/checkout")
+def checkout():
+    cart = session.get("cart")
+    total = 0
+    if cart is not None:
+        cart = get_cart_dict(cart)
+        for product in cart:
+            line_total = cart[product]["quantity"] * cart[product]["price"]
+            cart[product]["line_total"] = line_total
+            total += line_total
+    else:
+        cart = {}
+    return render_template("checkout.html", cart=cart, total=total)
+
+
+@app.route("/my-account")
+@login_required
+def my_account():
+    user = User.query.get(current_user.id)
+    form = AddressForm()
+    addresses = Address.query.get(current_user.id)
+    orders = Order.query.get(current_user.id)
+    return render_template("my-account.html", user=user, form=form,
+                           addresses=addresses, orders=orders)
 
 
 if __name__ == "__main__":

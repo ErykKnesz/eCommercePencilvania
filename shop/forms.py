@@ -47,3 +47,11 @@ class ProductForm(FlaskForm):
     price = FloatField("Price", validators=[DataRequired(),
                                             NumberRange(min=1), is_numeric])
     submit = SubmitField("Submit")
+
+
+class AddressForm(FlaskForm):
+    street = TextAreaField("Street", validators=[DataRequired()])
+    city = StringField("City", validators=[DataRequired()])
+    postcode = StringField("Postcode", validators=[DataRequired()])
+    country = StringField("Country", validators=[DataRequired()])
+    submit = SubmitField("Submit")
