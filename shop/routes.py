@@ -259,10 +259,40 @@ def checkout():
 def my_account():
     user = User.query.get(current_user.id)
     form = AddressForm()
-    addresses = Address.query.get(current_user.id)
-    orders = Order.query.get(current_user.id)
+    addresses = user.addresses or []
+    for address in addresses:
+        for col in address.__mapper__.column_attrs:
+            print(property(col))
+    orders = user.orders or []
     return render_template("my-account.html", user=user, form=form,
                            addresses=addresses, orders=orders)
+
+
+@app.route("/my-account/address/add", methods=["POST"])
+@login_required
+def add_address():
+    user = User.query.get(current_user.id)
+    form = AddressForm()
+    address = Address(
+        user_id=current_user.id,
+        country=form.data['country'],
+        city=form.data['city'],
+        street=form.data['street'],
+        postcode=form.data['postcode']
+    )
+    db.session.add(address)
+    #user.addresses.append(address)
+    db.session.commit()
+    return redirect(url_for("my_account"))
+
+
+@app.route("/my-account/address/delete/<int:address_id>")
+@login_required
+def delete_address(address_id):
+    address = Address.query.get(address_id)
+    db.session.delete(address)
+    db.session.commit()
+    return redirect(url_for("my_account"))
 
 
 if __name__ == "__main__":
