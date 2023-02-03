@@ -3,7 +3,7 @@
 {% block content %}
 
 <div class="container mt-3">
-    <form method="POST" action="{{ url_for('login') }}">
+    <form method="POST" action="{{ url_for('login', next=request.args.get('next', '')) }}">
         {{ form.csrf_token }}
         <div class="mb-3">
             {{ form.email.label(class="form-label") }}

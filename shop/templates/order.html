@@ -1,19 +1,28 @@
 {% extends "index.html" %}
 
 {% block content %}
+
 <div class="container">
-    <h2>Addresses</h2>
+    <h2>Your Addresses</h2>
     {% for address in addresses %}
-        <p>{{ address.line_1 or "" }}</p>
-        <p>{{ address.line_2 or "" }}</p>
-        <p>{{ address.street }}</p>
-        <p>{{ address.postcode }} {{ address.city }}</p>
-        <p>{{ address.country }}</p>
-        <a href="{{ url_for('delete_address', address_id=address.id) }}" class="btn btn-warning">Delete</a>
-        <a href="{{ url_for('edit_address', address_id=address.id) }}" class="btn btn-info">Edit</a>
+        {% if request.args.get('address_id', type=int) == address.id %}
+            <div style="border-style: dotted; border-color: coral">
+        {% else %}
+            <div>
+    {% endif %}
+            <p>{{ address.line_1 or "" }}</p>
+            <p>{{ address.line_2 or "" }}</p>
+            <p>{{ address.street }}</p>
+            <p>{{ address.postcode }} {{ address.city }}</p>
+            <p>{{ address.country }}</p>
+        </div>
+        <a href="{{ url_for('select_address', address_id=address.id) }}" class="btn btn-info mt-2">select</a>
+        <hr>
+
     {% endfor %}
+
     <h3>New Address</h3>
-        <form method="POST" action="{{ url_for('add_address', next=(request.args.get('next', '') or request.path)) }}">
+        <form method="POST" action="{{ url_for('add_address', next=request.path ) }}">
         {{ form.csrf_token }}
         <div class="mb-3">
             {{ form.line_1.label(class="form-label") }}
@@ -73,17 +82,8 @@
             {{ form.submit(class="btn btn-primary") }}
         </div>
     </form>
-    <h2>Order History</h2>
-    {% for order in orders %}
-        {% for field in order %}
-            {% if field.name != 'order_items' %}
-                {{ field }}
-            {% else %}
-                {% for item in  field %}
-                    {{ item }}
-                {% endfor %}
-            {% endif %}
-        {% endfor %}
-    {% endfor %}
 </div>
+
+
+
 {% endblock %}

@@ -23,11 +23,13 @@ class Address(db.Model):
     city = db.Column(db.String(100), nullable=False)
     street = db.Column(db.String(100), nullable=False)
     postcode = db.Column(db.String(100), nullable=False)
+    orders = db.relationship('Order', backref='address', lazy=True)
 
 
 class Order(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    address_id = db.Column(db.Integer, db.ForeignKey("address.id"))
     date = db.Column(db.Date, nullable=False)
     order_items = db.relationship('OrderItem', backref='order', lazy=True)
     status = db.Column(db.Text)  # open or completed
@@ -39,7 +41,7 @@ class OrderItem(db.Model):
     order_id = db.Column(db.Integer, db.ForeignKey("order.id"), nullable=False)
     name = db.Column(db.String(100), nullable=False)
     price = db.Column(db.Float, nullable=False)
-    serial_number = db.Column(db.Text, nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
 
 
 class Product(db.Model):

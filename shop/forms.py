@@ -56,4 +56,4 @@ class AddressForm(FlaskForm):
     city = StringField("City", validators=[DataRequired()])
     postcode = StringField("Postcode", validators=[DataRequired()])
     country = StringField("Country", validators=[DataRequired()])
-    submit = SubmitField("Submit")
+    submit = SubmitField("Create Address")
