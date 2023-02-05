@@ -50,3 +50,4 @@ class Product(db.Model):
     description = db.Column(db.String(100), nullable=False)
     filename = db.Column(db.String(100), nullable=False)
     price = db.Column(db.Float, nullable=False)
+    price_id = db.Column(db.String(100), nullable=False)  # required by Stripe API

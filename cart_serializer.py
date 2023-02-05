@@ -27,8 +27,9 @@ def update_cart_quantity(cart: str, increment: bool = False,
                 "product_id": %d,
                 "name": "%s",
                 "price": %f,
+                "price_id": "%s",
                 "quantity": %d 
-            };''' % (v["product_id"], v["name"], v["price"], v["quantity"])
+            };''' % (v["product_id"], v["name"], v["price"], v["price_id"], v["quantity"])
                      for v in cart_dict.values())
 
     return cart_dict, cart_str

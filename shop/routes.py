@@ -1,8 +1,10 @@
 import datetime
 import functools
+import os
 from functools import wraps
 from urllib.parse import urlencode
 
+import stripe
 from flask import (render_template, redirect, url_for, flash, request,
                    abort, session)
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -20,6 +22,9 @@ from image_handler import save_img
 
 ANONYMOUS_ID = 3
 ADMIN_ID = 1
+MY_DOMAIN = "http://127.0.0.1:5000"
+
+stripe.api_key = os.environ["STRIPE_API_KEY"]  # Stripe test secret API key
 
 configure_uploads(app, images)
 login_manager = LoginManager()
@@ -127,10 +132,12 @@ def add_to_cart():
             "product_id": %d,
             "name": "%s",
             "price": %f,
+            "price_id": "%s",
             "quantity": %d 
-        }''' % (product.id, product.name, product.price, qty)
+        }''' % (product.id, product.name, product.price, product.price_id, qty)
         session["cart"] += cart_contents + ";"  # string to save in session's cart
-        session["cart"] = update_cart_quantity(session.get("cart"), increment=True)[1]
+        session["cart"] = update_cart_quantity(session.get("cart"),
+                                               increment=True)[1]
         flash("New item was added to your cart!", "success")
     return redirect(url_for("get_products"))
 
@@ -336,7 +343,7 @@ def place_order():
                 db.session.commit()
             except KeyError:
                 flash("Please select one of your addresses.")
-                redirect(url_for("checkout"))
+                return redirect(url_for("checkout"))
         else:
             address = Address(
                 user_id=ANONYMOUS_ID,
@@ -359,14 +366,32 @@ def place_order():
             db.session.add(order)
             db.session.commit()
     cart = get_cart_dict(session.get("cart"))
-    db.session.add_all(
-        [OrderItem(order_id=order.id, name=cart[product]["name"],
-                   price=cart[product]["price"],
-                   quantity=cart[product]["quantity"]) for product in cart]
-    )
+    order_items = []
+    line_items = []
+    for product in cart:
+        order_items.append(
+            OrderItem(order_id=order.id, name=cart[product]["name"],
+                      price=cart[product]["price"],
+                      quantity=cart[product]["quantity"])
+            )
+        line_items.append(
+            {
+                "price": "%s" % cart[product]["price_id"],
+                "quantity": cart[product]["quantity"]
+            }
+        )
+    db.session.add_all(order_items)
     db.session.commit()
-    flash("We have received your order, thank you!", "success")
-    return redirect(url_for("get_products"))
+    try:
+        checkout_session = stripe.checkout.Session.create(
+            line_items=line_items,
+            mode='payment',
+            success_url=MY_DOMAIN + '/success.html',
+            cancel_url=MY_DOMAIN + '/cancel.html',
+        )
+    except Exception as e:
+        return str(e)
+    return redirect(checkout_session.url, code=303)
 
 
 @app.route("/checkout/address")
